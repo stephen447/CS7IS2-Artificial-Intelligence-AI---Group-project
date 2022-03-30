@@ -1,5 +1,9 @@
 
 import random, util, logic, game_func
+
+import inspect
+from learningAgents import ReinforcementAgent
+
 class qlearning(ReinforcementAgent): # Reinforcement agent needs to be defined
 
     def __init__(self, **args):
@@ -8,6 +12,44 @@ class qlearning(ReinforcementAgent): # Reinforcement agent needs to be defined
 
         "*** YOUR CODE HERE ***"
         self.values = util.Counter()  #  Initialising dictionary for q values with a defualt value of zero for every state
+        start_state = mat = logic.start_game()
+
+        fringe = util.Queue()  # The fringe is now a queue for BFS, which operates with FIFO
+        fr = (start_state, [], 0)  # Start state as matric, empty array for actions, and a zero for current score
+        fringe.push(fr)  #  Add the start state to the fringe, so its sucessors can be calculated
+        max_score = 0  # Setting initial maximum score to zero
+        max_tile = 0
+
+        import numpy as np
+
+    
+        
+        qValsOfStates = np.array(start_state) * 0   #Q-values for all states should be initialised to 0 as an array
+        qValOfStateActionPairs = []
+#print(qVals)
+
+        for i in range(1000):   #1000 episodes
+            start_state = mat = logic.start_game()  #Restart with new state at each episode
+            fr = (start_state, [], 0)  # Start state as matrix, empty array for actions, and a zero for current
+            
+            current_state = start_state
+            
+            while (logic.get_current_state(current_state) not in ['WON', 'LOST']): #Game still playable
+                
+            
+                #********* these calls are in wrong place - to do with instantiating self i think
+                bestAction = self.getAction(current_state)  #Gets best action to take
+                nextState = self.doAction(current_state, bestAction)    #Gets next state
+                
+                allActions = self.getLegalActions(current_state)    #Gets all actions
+                qValsOfActions = []
+                for action in allActions:
+                    qValsOfActions.append(self.getQValue(current_state, action))    #Get q val of all actions
+                    
+                qValOfStateActionPairs[current_state] = qValsOfActions  #Update q vals for the current state with all actions
+                current_state = nextState #Update current state
+                
+                    
 
     def getQValue(self, state, action):
         """
@@ -124,6 +166,10 @@ class qlearning(ReinforcementAgent): # Reinforcement agent needs to be defined
             def getValue(self, state):
                 return self.computeValueFromQValues(state)
 
+    __init__(ReinforcementAgent)  #Run init
 
+    
+
+        
 
 

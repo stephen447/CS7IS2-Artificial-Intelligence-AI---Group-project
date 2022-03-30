@@ -18,11 +18,11 @@ def start_game():
         mat.append([0] * 4)
 
     # printing controls for user
-    print("Commands are as follows : ")
-    print("'W' or 'w' : Move Up")
-    print("'S' or 's' : Move Down")
-    print("'A' or 'a' : Move Left")
-    print("'D' or 'd' : Move Right")
+    # print("Commands are as follows : ")
+    # print("'W' or 'w' : Move Up")
+    # print("'S' or 's' : Move Down")
+    # print("'A' or 'a' : Move Left")
+    # print("'D' or 'd' : Move Right")
 
     # calling the function to add
     # a new 2 in grid after every step
