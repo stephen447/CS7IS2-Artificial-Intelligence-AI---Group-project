@@ -1,17 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Apr  2 17:52:08 2022
+
+@author: store
+"""
+
 import logic  # This is the logic function for the game_func
 import numpy as np  # Numpy library
 import random, game_func_q # importing random library and game_func
 import matplotlib.pyplot as plt
-
-
-Q = {}  # Dictionary with the q value for corresponsing states and actions
-epsilon = 0.5  # epsilon parameter for deciding random actions
-alpha = 0.1  # Alpha is for weighting the new q values relative to old one
-discount = 0.95  # Discount for rewards
-
-def tup(matrix):  # Used to convert the state from a list to a tuple - lists cant be stored in dictionary
-    result = [tuple(l) for l in matrix]
-    return tuple(result)
+import random
 
 
 def getLegalActions(state):
@@ -29,53 +27,8 @@ def getLegalActions(state):
     else:  # else return an empty array if the game is over and no sucessors for given node
         return []
 
-def getQValue(state, action):
-        # This function checks the q dictionary to see if we have visited this state before, it returns 0 if it hasnt or returns the q value if it has
-        state = tup(state)
-        if (state, action) not in Q:
-            return 0.0
-        return Q[(state, action)]
 
-def computeValueFromQValues(state):
-    # This returns the max q value for a given state
-    actions = getLegalActions(state)
-    if not actions:
-        return 0
-    return max([getQValue(state, a) for a in actions])
-
-def update(state, action, nextState, reward):
-    # This function update the q value for a given state, action pair
-    sample = reward + discount * computeValueFromQValues(nextState)  # New q value
-    state = tup(state)
-    Q[state, action] = (1 - alpha) * getQValue(state, action) + alpha * sample # q value for a given state and action is the old value and new value merged
-
-
-def computeActionFromQValues(state):
-    # This function returns the best action for a state by finding max q value
-    # If there is multiple actions with same q value it will return a random choice between them
-    actions = getLegalActions(state)
-    if len(actions) < 1:
-        return None
-    else:
-        best_q_value = computeValueFromQValues(state)
-        best_actions = [a for a in actions if getQValue(state, a) == best_q_value]
-        return random.choice(best_actions)
-
-
-def getAction(state):
-    # This function return the action to take by returning a ranom action epsilon proportion of the time, otherwise it returns the optimal action
-    legalActions = getLegalActions(state)
-    p = epsilon
-    if not legalActions:
-        return None
-    greedy_flag = random.random()
-    if greedy_flag < epsilon:
-        return random.choice(legalActions)
-    else:
-        return computeActionFromQValues(state)
-
-
-def learn():  # Main implementation of RL
+def guess():  # Main implementation of random
     # Initialise game
     state = logic.start_game()  # Get the start state
     current_score = 0  # The score is zero for start state
@@ -92,12 +45,13 @@ def learn():  # Main implementation of RL
         else:  # Otherwise the game isnt over and must continue to learn q values
             actions = getLegalActions(state)  # Get the actions of the current state
             if (len(actions)>0):
-                for act in actions:  # For every action
-                    game = game_func_q.game(state, act, current_score) # Run the game to get the successor, reward,
-                    next_state = game[0]  # The successor for given action
-                    reward = game[3]  # The reward for the given action - essentially the rewards is the improvement in the score by action taken
-                    update(state, act, next_state, reward)  # Update the current value of the action in question
-                chosen_action = getAction(state)  # Get the action for the updated q values
+                # for act in actions:  # For every action
+                #     game = game_func_q.game(state, act, current_score) # Run the game to get the successor, reward,
+                #     next_state = game[0]  # The successor for given action
+                #     reward = game[3]  # The reward for the given action - essentially the rewards is the improvement in the score by action taken
+                #     update(state, act, next_state, reward)  # Update the current value of the action in question
+                randomIndex = random.randrange(0, len(actions) - 1)
+                chosen_action = actions[randomIndex]  # Get the action for the updated q values
                 game = game_func_q.game(state, chosen_action, current_score)  # Run the game for the chosen action in order to update the state for the next run
                 state = game[0]  # Update current state
                 max_tile = game[3]  # Update the max tile
@@ -115,7 +69,7 @@ def plotPerformancePerEpisode(highestScore, highestTile):
     plt.rcParams['figure.constrained_layout.use'] = True
     plt.plot(range(1,50), highestScore, color='green', marker='o', linestyle='dashed', linewidth=2, markersize=12, label = 'Highest score')  #Highest score in green -> 50 episodes
     plt.plot(range(1,50), highestTile, color='red', marker='x', linestyle='dashed', linewidth=2, markersize=12, label = 'Highest tile')  #Highest tile in red -> 50 episodes
-    plt.title('Performance of Q Learning RL agent over 50 episodes')
+    plt.title('Performance of random agent over 50 episodes')
     plt.show()
 
 
@@ -126,10 +80,10 @@ def __main__():
     episodes = 50  # No. of episode to run for the algorithm - tune this
     print('here')
     for _ in range(episodes):
-        RL = learn()
-        state = RL[0]  # State achieved
-        current_score = RL[1]  # Reading in the current score achieved for current episode
-        current_max_tile = RL[2]
+        guesserResult = guess()
+        state = guesserResult[0]  # State achieved
+        current_score = guesserResult[1]  # Reading in the current score achieved for current episode
+        current_max_tile = guesserResult[2]
         highestScorePerEpisode.append(current_score)
         highestTilePerEpisode.append(current_max_tile)
 
@@ -160,7 +114,6 @@ def __main__():
     print(max_tile_state[2])
     print(max_tile_state[3])
 
-    print('Number of states explored', len(Q))  # Not sure if correct - printing the amount of states explored
     plotPerformancePerEpisode(highestScorePerEpisode, highestTilePerEpisode)    
 
 __main__()  # Call main function to run code
