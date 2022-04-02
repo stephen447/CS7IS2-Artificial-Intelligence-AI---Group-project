@@ -6,7 +6,6 @@
 import logic  # Modified this to
 import numpy as np
 
-
 def game(current_matrix, x, curr_score):
     # we have to move up
     if (x == 'W' or x == 'w'):
@@ -40,20 +39,20 @@ def game(current_matrix, x, curr_score):
     else:
         print("Invalid Key Pressed")
 
-    # print the matrix after each
-    # move.
+    # Creating rewad for terminal states - win and loss
     curr_state = logic.get_current_state(mat)
-    if(curr_state == 'WON'):
+    if(curr_state == 'WON'):  # Reward of 4096 for win state
         state_val = 4096
-    elif(curr_state == 'LOSS'):
+    elif(curr_state == 'LOST'):  # Reward of -4096 for lost state
         state_val = -4096
-    else:
+    else:  # Value of zero for game not over state - just leave the reward as the score for these states
         state_val = 0
 
-    reward = score+state_val
+    reward = score+state_val  # Reward - is the score improvement from the last state to the next. I also weight the terminal states of win and loss appropriately
     new_score = curr_score + score  # calculating new score
     max_tile = np.max(mat)  # return max tile of current state
 
+    # print the matrix after each move.
     # print(mat[0])
     # print(mat[1])
     # print(mat[2])
