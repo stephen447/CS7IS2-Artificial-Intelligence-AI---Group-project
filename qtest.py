@@ -3,7 +3,7 @@ import numpy as np  # Numpy library
 import random, game_func_q # importing random library and game_func
 
 Q = {}  # Dictionary with the q value for corresponsing states and actions
-epsilon = 0.1  # epsilon parameter for deciding random actions
+epsilon = 0.5  # epsilon parameter for deciding random actions
 alpha = 0.1  # Alpha is for weighting the new q values relative to old one
 discount = 0.95  # Discount for rewards
 
@@ -43,8 +43,6 @@ def computeValueFromQValues(state):
 
 def update(state, action, nextState, reward):
     # This function update the q value for a given state, action pair
-
-    print(nextState)
     sample = reward + discount * computeValueFromQValues(nextState)  # New q value
     state = tup(state)
     Q[state, action] = (1 - alpha) * getQValue(state, action) + alpha * sample # q value for a given state and action is the old value and new value merged
@@ -54,13 +52,11 @@ def computeActionFromQValues(state):
     # This function returns the best action for a state by finding max q value
     # If there is multiple actions with same q value it will return a random choice between them
     actions = getLegalActions(state)
-    print('actions are', actions)
     if len(actions) < 1:
         return None
     else:
         best_q_value = computeValueFromQValues(state)
         best_actions = [a for a in actions if getQValue(state, a) == best_q_value]
-        print('best actions are', best_actions)
         return random.choice(best_actions)
 
 
@@ -80,7 +76,6 @@ def getAction(state):
 def learn():  # Main implementation of RL
     # Initialise game
     state = logic.start_game()  # Get the start state
-    print(state)
     current_score = 0  # The score is zero for start state
 
     while True: #while the game hasnt reached a terminal state
@@ -102,17 +97,52 @@ def learn():  # Main implementation of RL
                 chosen_action = getAction(state)  # Get the action for the updated q values
                 game = game_func_q.game(state, chosen_action, current_score)  # Run the game for the chosen action in order to update the state for the next run
                 state = game[0]  # Update current state
+                max_tile = game[3]  # Update the max tile
                 current_score = game[2]  # Update the current state
-                print(current_score)
+
+    return state, current_score, max_tile  # returning the max tile and score
 
 
 
 
 def __main__():
-    for i in range(100):
-        mean_max_tile = 0
-        for _ in range(20):
-            learn()
-        print(mean_max_tile / 20)
+    global_max_tile = 0  # Initialising the global max tile
+    global_max_score = 0  # Initialising the global
+    episodes = 50  # No. of episode to run for the algorithm - tune this
 
-__main__()
+    for _ in range(episodes):
+        RL = learn()
+        state = RL[0]  # State achieved
+        current_score = RL[1]  # Reading in the current score achieved for current episode
+        current_max_tile = RL[2]
+
+        if current_max_tile > global_max_tile:  # Checking if latest episode achieved new global max
+            global_max_tile = current_max_tile
+            max_tile_state = state
+            print('New global max tile : ', global_max_tile)
+            print('Max tile state', max_tile_state)
+
+        if current_score > global_max_score:  # Checking if latest episode achieved new global max
+            global_max_score = current_score
+            max_score_state = state
+            print('New global max tile : ', global_max_tile)
+            print('Max score state', max_score_state)
+
+    print('Max score achieved: ', global_max_score)  # Printing the max score achieved over all episodes
+    print('Max score state:')
+    print(max_score_state[0])
+    print(max_score_state[1])
+    print(max_score_state[2])
+    print(max_score_state[3])
+
+    print('Max tile achieved: ', global_max_tile)  # Printing the max tile achieved over all episodes
+    print('Max tile state:')
+    print(max_tile_state[0])
+    print(max_tile_state[1])
+    print(max_tile_state[2])
+    print(max_tile_state[3])
+
+    print('Number of states explored', len(Q))  # Not sure if correct - printing the amount of states explored
+
+
+__main__()  # Call main function to run code
