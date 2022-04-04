@@ -42,9 +42,9 @@ def game(current_matrix, x, curr_score):
     # Creating rewad for terminal states - win and loss
     curr_state = logic.get_current_state(mat)
     if(curr_state == 'WON'):  # Reward of 4096 for win state
-        state_val = 4096
+        state_val = 500000
     elif(curr_state == 'LOST'):  # Reward of -4096 for lost state
-        state_val = -4096
+        state_val = -500000
     else:  # Value of zero for game not over state - just leave the reward as the score for these states
         state_val = 0
 
