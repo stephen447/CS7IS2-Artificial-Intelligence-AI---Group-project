@@ -3,9 +3,9 @@ import numpy as np  # Numpy library
 import random, game_func_q # importing random library and game_func
 
 Q = {}  # Dictionary with the q value for corresponsing states and actions
-epsilon = 0.5  # epsilon parameter for deciding random actions
-alpha = 0.1  # Alpha is for weighting the new q values relative to old one
-discount = 0.95  # Discount for rewards
+epsilon = 1  # epsilon parameter for deciding random actions
+alpha = 0.1  # Alpha is for weighting the new q values relative to old one - learning rate
+discount = 0.9997  # Discount for rewards
 
 def tup(matrix):  # Used to convert the state from a list to a tuple - lists cant be stored in dictionary
     result = [tuple(l) for l in matrix]
@@ -36,10 +36,15 @@ def getQValue(state, action):
 
 def computeValueFromQValues(state):
     # This returns the max q value for a given state
+    max_q_val = -np.inf
     actions = getLegalActions(state)
     if not actions:
         return 0
-    return max([getQValue(state, a) for a in actions])
+    for a in actions:
+        q_val = getQValue(state, a)
+        if q_val>max_q_val:
+            max_q_val = q_val
+    return max_q_val
 
 def update(state, action, nextState, reward):
     # This function update the q value for a given state, action pair
@@ -52,11 +57,24 @@ def computeActionFromQValues(state):
     # This function returns the best action for a state by finding max q value
     # If there is multiple actions with same q value it will return a random choice between them
     actions = getLegalActions(state)
+    best_q_value = -20000
+    #print('Available actions', actions)
+    best_actions = []
     if len(actions) < 1:
         return None
     else:
-        best_q_value = computeValueFromQValues(state)
-        best_actions = [a for a in actions if getQValue(state, a) == best_q_value]
+        #best_q_value = computeValueFromQValues(state)
+        for a in actions:
+            q_value = getQValue(state, a)
+            if (best_q_value < q_value):
+                best_q_value = q_value
+
+        #print('The best q value is', best_q_value)
+        for a in actions:
+            #print('The current q value of action', a, 'is', getQValue(state, a))
+            if getQValue(state, a) == best_q_value:
+                best_actions.append(a)
+        #best_actions = [a for a in actions if getQValue(state, a) == best_q_value]
         return random.choice(best_actions)
 
 
@@ -108,9 +126,12 @@ def learn():  # Main implementation of RL
 def __main__():
     global_max_tile = 0  # Initialising the global max tile
     global_max_score = 0  # Initialising the global
-    episodes = 50  # No. of episode to run for the algorithm - tune this
+    episodes = 50000  # No. of episode to run for the algorithm - tune this
 
     for _ in range(episodes):
+        global epsilon
+        epsilon = epsilon - 1/episodes
+        print('epsilon', epsilon)
         RL = learn()
         state = RL[0]  # State achieved
         current_score = RL[1]  # Reading in the current score achieved for current episode
@@ -125,7 +146,7 @@ def __main__():
         if current_score > global_max_score:  # Checking if latest episode achieved new global max
             global_max_score = current_score
             max_score_state = state
-            print('New global max tile : ', global_max_tile)
+            print('New global max score : ', global_max_score)
             print('Max score state', max_score_state)
 
     print('Max score achieved: ', global_max_score)  # Printing the max score achieved over all episodes
