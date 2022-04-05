@@ -1,169 +1,257 @@
-import logic  # This is the logic function for the game_func
-import numpy as np  # Numpy library
-import random, game_func_q # importing random library and game_func
+# logic.py to be
+# imported in the 2048.py file
 
-Q = {}  # Dictionary with the q value for corresponsing states and actions
-epsilon = 1  # epsilon parameter for deciding random actions
-alpha = 0.1  # Alpha is for weighting the new q values relative to old one - learning rate
-discount = 0.9997  # Discount for rewards
+# importing random package
+# for methods to generate random
+# numbers.
+import random
+global actual_score
 
-def tup(matrix):  # Used to convert the state from a list to a tuple - lists cant be stored in dictionary
-    result = [tuple(l) for l in matrix]
-    return tuple(result)
-
-
-def getLegalActions(state):
-    legal_actions = []  # List with successors, sucessor scores, actions
-    actions = ['w', 'a', 's', 'd']  # array with possible actions - up, left, down, right.
-    status = logic.get_current_state(state)  # Get the current state
-    if (status == 'GAME NOT OVER'):  # if the game isnt over, get successor for all actions
-        for act in actions:
-            successor = game_func_q.game(state, act, 0)  # Read in the state, score and correspond of successor i
-            suc_mat = successor[0]  # the sucessor is stored in position 0 of sucessor list
-            if suc_mat != state:  # if the sucessor isnt the same as the current state - otherwise it will get stuck in infinite loop
-                legal_actions.append(act)  # add sucessor to list of sucessors to be returned
-
-        return legal_actions  # Return suc with all successors for a state
-    else:  # else return an empty array if the game is over and no sucessors for given node
-        return []
-
-def getQValue(state, action):
-        # This function checks the q dictionary to see if we have visited this state before, it returns 0 if it hasnt or returns the q value if it has
-        state = tup(state)
-        if (state, action) not in Q:
-            return 0.0
-        return Q[(state, action)]
-
-def computeValueFromQValues(state):
-    # This returns the max q value for a given state
-    max_q_val = -np.inf
-    actions = getLegalActions(state)
-    if not actions:
-        return 0
-    for a in actions:
-        q_val = getQValue(state, a)
-        if q_val>max_q_val:
-            max_q_val = q_val
-    return max_q_val
-
-def update(state, action, nextState, reward):
-    # This function update the q value for a given state, action pair
-    sample = reward + discount * computeValueFromQValues(nextState)  # New q value
-    state = tup(state)
-    Q[state, action] = (1 - alpha) * getQValue(state, action) + alpha * sample # q value for a given state and action is the old value and new value merged
+# function to initialize game / grid
+# at the start
+def start_game():
+    # declaring an empty list then
+    # appending 4 list each with four
+    # elements as 0.
+    mat = []
+    for i in range(4):
+        mat.append([0] * 4)
 
 
-def computeActionFromQValues(state):
-    # This function returns the best action for a state by finding max q value
-    # If there is multiple actions with same q value it will return a random choice between them
-    actions = getLegalActions(state)
-    best_q_value = -20000
-    #print('Available actions', actions)
-    best_actions = []
-    if len(actions) < 1:
-        return None
-    else:
-        #best_q_value = computeValueFromQValues(state)
-        for a in actions:
-            q_value = getQValue(state, a)
-            if (best_q_value < q_value):
-                best_q_value = q_value
-
-        #print('The best q value is', best_q_value)
-        for a in actions:
-            #print('The current q value of action', a, 'is', getQValue(state, a))
-            if getQValue(state, a) == best_q_value:
-                best_actions.append(a)
-        #best_actions = [a for a in actions if getQValue(state, a) == best_q_value]
-        return random.choice(best_actions)
+    # calling the function to add
+    # a new 2 in grid after every step
+    add_new_2(mat)
+    return mat
 
 
-def getAction(state):
-    # This function return the action to take by returning a ranom action epsilon proportion of the time, otherwise it returns the optimal action
-    legalActions = getLegalActions(state)
-    p = epsilon
-    if not legalActions:
-        return None
-    greedy_flag = random.random()
-    if greedy_flag < epsilon:
-        return random.choice(legalActions)
-    else:
-        return computeActionFromQValues(state)
+# function to add a new 2 in
+# grid at any random empty cell
+def add_new_2(mat):
+    # choosing a random index for
+    # row and column.
+    r = random.randint(0, 3)
+    c = random.randint(0, 3)
+    counter = 0
+
+    # while loop will break as the
+    # random cell chosen will be empty
+    # (or contains zero)
+    while ((mat[r][c] != 0) & (counter<50)):
+        r = random.randint(0, 3)
+        c = random.randint(0, 3)
+        counter = counter + 1
+
+    # we will place a 2 at that empty
+    # random cell.
+    if counter < 50:
+        mat[r][c] = 2
+    return mat
 
 
-def learn():  # Main implementation of RL
-    # Initialise game
-    state = logic.start_game()  # Get the start state
-    current_score = 0  # The score is zero for start state
+# function to get the current
+# state of game
+def get_current_state(mat):
+    # if any cell contains
+    # 2048 we have won
+    for i in range(4):
+        for j in range(4):
+            if (mat[i][j] == 2048):
+                return 'WON'
 
-    while True: #while the game hasnt reached a terminal state
-        game_status = logic.get_current_state(state)  # Get the current status of the game
-        if game_status == 'WON':  # If the game_status is WON, the episode is over and it should break
-            print('Game Won')
-            break
-        elif game_status == 'LOST':  # If the game_status is LOSS, the episode is over and it should break
-            print('Game Lost')
-            break
-        else:  # Otherwise the game isnt over and must continue to learn q values
-            actions = getLegalActions(state)  # Get the actions of the current state
-            if (len(actions)>0):
-                for act in actions:  # For every action
-                    game = game_func_q.game(state, act, current_score) # Run the game to get the successor, reward,
-                    next_state = game[0]  # The successor for given action
-                    reward = game[3]  # The reward for the given action - essentially the rewards is the improvement in the score by action taken
-                    update(state, act, next_state, reward)  # Update the current value of the action in question
-                chosen_action = getAction(state)  # Get the action for the updated q values
-                game = game_func_q.game(state, chosen_action, current_score)  # Run the game for the chosen action in order to update the state for the next run
-                state = game[0]  # Update current state
-                max_tile = game[3]  # Update the max tile
-                current_score = game[2]  # Update the current state
+    # if we are still left with
+    # atleast one empty cell
+    # game is not yet over
+    for i in range(4):
+        for j in range(4):
+            if (mat[i][j] == 0):
+                return 'GAME NOT OVER'
 
-    return state, current_score, max_tile  # returning the max tile and score
+    # or if no cell is empty now
+    # but if after any move left, right,
+    # up or down, if any two cells
+    # gets merged and create an empty
+    # cell then also game is not yet over
+    for i in range(3):
+        for j in range(3):
+            if (mat[i][j] == mat[i + 1][j] or mat[i][j] == mat[i][j + 1]):
+                return 'GAME NOT OVER'
 
+    for j in range(3):
+        if (mat[3][j] == mat[3][j + 1]):
+            return 'GAME NOT OVER'
 
+    for i in range(3):
+        if (mat[i][3] == mat[i + 1][3]):
+            return 'GAME NOT OVER'
 
-
-def __main__():
-    global_max_tile = 0  # Initialising the global max tile
-    global_max_score = 0  # Initialising the global
-    episodes = 50000  # No. of episode to run for the algorithm - tune this
-
-    for _ in range(episodes):
-        global epsilon
-        epsilon = epsilon - 1/episodes
-        print('epsilon', epsilon)
-        RL = learn()
-        state = RL[0]  # State achieved
-        current_score = RL[1]  # Reading in the current score achieved for current episode
-        current_max_tile = RL[2]
-
-        if current_max_tile > global_max_tile:  # Checking if latest episode achieved new global max
-            global_max_tile = current_max_tile
-            max_tile_state = state
-            print('New global max tile : ', global_max_tile)
-            print('Max tile state', max_tile_state)
-
-        if current_score > global_max_score:  # Checking if latest episode achieved new global max
-            global_max_score = current_score
-            max_score_state = state
-            print('New global max score : ', global_max_score)
-            print('Max score state', max_score_state)
-
-    print('Max score achieved: ', global_max_score)  # Printing the max score achieved over all episodes
-    print('Max score state:')
-    print(max_score_state[0])
-    print(max_score_state[1])
-    print(max_score_state[2])
-    print(max_score_state[3])
-
-    print('Max tile achieved: ', global_max_tile)  # Printing the max tile achieved over all episodes
-    print('Max tile state:')
-    print(max_tile_state[0])
-    print(max_tile_state[1])
-    print(max_tile_state[2])
-    print(max_tile_state[3])
-
-    print('Number of states explored', len(Q))  # Not sure if correct - printing the amount of states explored
+    # else we have lost the game
+    return 'LOST'
 
 
-__main__()  # Call main function to run code
+# all the functions defined below
+# are for left swap initially.
+
+# function to compress the grid
+# after every step before and
+# after merging cells.
+def compress(mat):
+    # bool variable to determine
+    # any change happened or not
+    changed = False
+
+    # empty grid
+    new_mat = []
+
+    # with all cells empty
+    for i in range(4):
+        new_mat.append([0] * 4)
+
+    # here we will shift entries
+    # of each cell to it's extreme
+    # left row by row
+    # loop to traverse rows
+    for i in range(4):
+        pos = 0
+
+        # loop to traverse each column
+        # in respective row
+        for j in range(4):
+            if (mat[i][j] != 0):
+
+                # if cell is non empty then
+                # we will shift it's number to
+                # previous empty cell in that row
+                # denoted by pos variable
+                new_mat[i][pos] = mat[i][j]
+
+                if (j != pos):
+                    changed = True
+                pos += 1
+
+    # returning new compressed matrix
+    # and the flag variable.
+    return new_mat, changed
+
+
+# function to merge the cells
+# in matrix after compressing
+def merge(mat):
+    changed = False
+    score = 0
+    for i in range(4):
+        for j in range(3):
+
+            # if current cell has same value as
+            # next cell in the row and they
+            # are non empty then
+            if (mat[i][j] == mat[i][j + 1] and mat[i][j] != 0):
+                # double current cell value and
+                # empty the next cell
+                mat[i][j] = mat[i][j] * 2
+                mat[i][j + 1] = 0
+                score = mat[i][j] + score
+
+
+                # make bool variable True indicating
+                # the new grid after merging is
+                # different.
+                changed = True
+            #actual_score = score
+    return mat, changed, score
+
+
+# function to reverse the matrix
+# means reversing the content of
+# each row (reversing the sequence)
+def reverse(mat):
+    new_mat = []
+    for i in range(4):
+        new_mat.append([])
+        for j in range(4):
+            new_mat[i].append(mat[i][3 - j])
+    return new_mat
+
+
+# function to get the transpose
+# of matrix means interchanging
+# rows and column
+def transpose(mat):
+    new_mat = []
+    for i in range(4):
+        new_mat.append([])
+        for j in range(4):
+            new_mat[i].append(mat[j][i])
+    return new_mat
+
+
+# function to update the matrix
+# if we move / swipe left
+def move_left(grid):
+    # first compress the grid
+    new_grid, changed1 = compress(grid)
+
+    # then merge the cells.
+    new_grid, changed2, score = merge(new_grid)
+
+    changed = changed1 or changed2
+
+    # again compress after merging.
+    new_grid, temp = compress(new_grid)
+
+    # return new matrix and bool changed
+    # telling whether the grid is same
+    # or different
+    return new_grid, changed, score
+
+
+# function to update the matrix
+# if we move / swipe right
+def move_right(grid):
+    # to move right we just reverse
+    # the matrix
+    new_grid = reverse(grid)
+
+    # then move left
+    new_grid, changed, score = move_left(new_grid)
+
+    # then again reverse matrix will
+    # give us desired result
+    new_grid = reverse(new_grid)
+    return new_grid, changed, score
+
+
+# function to update the matrix
+# if we move / swipe up
+def move_up(grid):
+    # to move up we just take
+    # transpose of matrix
+    new_grid = transpose(grid)
+
+    # then move left (calling all
+    # included functions) then
+    new_grid, changed, score = move_left(new_grid)
+
+    # again take transpose will give
+    # desired results
+    new_grid = transpose(new_grid)
+    return new_grid, changed, score
+
+
+# function to update the matrix
+# if we move / swipe down
+def move_down(grid):
+    # to move down we take transpose
+    new_grid = transpose(grid)
+
+    # move right and then again
+    new_grid, changed, score = move_right(new_grid)
+
+    # take transpose will give desired
+    # results.
+    new_grid = transpose(new_grid)
+    return new_grid, changed, score
+
+# this file only contains all the logic
+# functions to be called in main function
+# present in the other file
+
