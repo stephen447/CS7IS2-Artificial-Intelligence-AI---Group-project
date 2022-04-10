@@ -1,14 +1,8 @@
 # logic.py to be
-# imported in the 2048.py file
 
-# importing random package
-# for methods to generate random
-# numbers.
 import random
 global actual_score
 
-# function to initialize game / grid
-# at the start
 def start_game():
     # declaring an empty list then
     # appending 4 list each with four
